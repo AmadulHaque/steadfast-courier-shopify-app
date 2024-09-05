@@ -13,19 +13,38 @@ class WelcomeController extends Controller
 {
     public function welcome()
     {
+        // Get the authenticated user's ID
+        $userId = auth()->user()->id;
+        
+        // Capture the search input
+        $search = request()->input('search');
 
-        $orders= Order::where('user_id', auth()->user()->id)->paginate(20);
-
-        if (request()->ajax()):
+        // Query to fetch orders with optional search functionality
+        $orders = Order::where('user_id', $userId)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhere('orderNumber', 'like', "%{$search}%")
+                      ->orWhere('steadFastId', 'like', "%{$search}%")
+                      ->orWhere('orderId', 'like', "%{$search}%");
+                });
+            })
+            ->paginate(20);
+    
+        // Return JSON response if it's an AJAX request
+        if (request()->ajax()) {
             return response()->json([
                 'success' => true,
-                "orders" => $orders->items(),
+                'orders' => $orders->items(),
                 'links' => $orders->links()->render(),
             ]);
-        endif;
-
+        }
+    
+        // Return the view with the orders data
         return view('welcome', compact('orders'));
     }
+    
 
     public function saveSettings(Request $request){
 

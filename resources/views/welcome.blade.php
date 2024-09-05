@@ -117,12 +117,13 @@
                     </div>
                 </div>
             </template>
+
             {{-- ORDERS --}}
             <template x-if="$store.state.activeTab=='orders'">
                 <div>
-                    <template x-if="$store.state.orders.length">
+                    <template">
                         <div>
-                            <div class="flex items-center justify-between">
+                            <div  style="display: block;width: 100%;overflow: auto;">
                                 <button
                                 class="bg-green-700 hover:bg-green-800 px-4 py-1 rounded-md text-white"
                                 x-bind:class="$store.state.bulkSelect && '!bg-red-700 hover:!bg-red-800'"
@@ -130,10 +131,21 @@
                                 x-text="$store.state.bulkSelect ? 'Cancel' : 'Bulk Selection'"></button>
                                 <template x-if="$store.state.bulkOrders.length">
                                     <button
-                                    class="bg-green-700 hover:bg-green-800 px-4 py-1 rounded-md text-white"
+                                    class="bg-green-700 hover:bg-green-800 ml-3 px-4 py-1 rounded-md text-white"
                                     @click="bulkSend()">Send Bulk</button>
                                 </template>
+
+
+                                    <!-- Search Input -->
+                                <input type="text" 
+                                    placeholder="Search orders..." 
+                                    class="border rounded-md" 
+                                    x-model="$store.state.searchTerm" 
+                                    @input="$store.state.searchOrders()" style="float: right;padding: 5px 15px;"/>
+
                             </div>
+
+                
                             <div class="overflow-auto">
                                 <table class="w-full text-left mt-4">
                                     <thead>
@@ -257,6 +269,7 @@
                     businessTerms: "{{ str_replace('<br/>', '\n', auth()->user()->businessTerms) }}",
                 },
                 orders: {!! json_encode($orders->items()) !!},
+                searchTerm: '', 
                 setOrders(orders) {
                     this.orders = orders;
                 },
@@ -267,6 +280,25 @@
                 msg: false,
                 bulkSelect: false,
                 bulkOrders:[],
+                searchOrders: async function() {
+                    const searchTerm = this.searchTerm;
+                    try {
+                        const result = await axios({
+                            url: "{{ route('home') }}", 
+                            method: 'GET',
+                            params: {
+                                search: searchTerm,
+                            }
+                        });
+                        
+                        if (result.data.success) {
+                            this.setOrders(result.data.orders);
+                            this.setLinks(result.data.links);
+                        }
+                    } catch (error) {
+                        console.error("Search error: ", error);
+                    }
+                }
             });
             getBalance(false);
         });
