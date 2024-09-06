@@ -117,115 +117,107 @@
                     </div>
                 </div>
             </template>
-
             {{-- ORDERS --}}
             <template x-if="$store.state.activeTab=='orders'">
                 <div>
-                    <template">
-                        <div>
-                            <div  style="display: block;width: 100%;overflow: auto;">
+                    <div>
+                        <div style="display: block;width: 100%;overflow: auto;">
+                            <button
+                            class="bg-green-700 hover:bg-green-800 px-4 py-1 rounded-md text-white"
+                            x-bind:class="$store.state.bulkSelect && '!bg-red-700 hover:!bg-red-800'"
+                            @click="bulkSelect()"
+                            x-text="$store.state.bulkSelect ? 'Cancel' : 'Bulk Selection'"></button>
+                            <template x-if="$store.state.bulkOrders.length">
                                 <button
-                                class="bg-green-700 hover:bg-green-800 px-4 py-1 rounded-md text-white"
-                                x-bind:class="$store.state.bulkSelect && '!bg-red-700 hover:!bg-red-800'"
-                                @click="bulkSelect()"
-                                x-text="$store.state.bulkSelect ? 'Cancel' : 'Bulk Selection'"></button>
-                                <template x-if="$store.state.bulkOrders.length">
-                                    <button
-                                    class="bg-green-700 hover:bg-green-800 ml-3 px-4 py-1 rounded-md text-white"
-                                    @click="bulkSend()">Send Bulk</button>
-                                </template>
+                                class="bg-green-700 hover:bg-green-800 px-4 ml-3 py-1 rounded-md text-white"
+                                @click="bulkSend()">Send Bulk</button>
+                            </template>
 
-
-                                    <!-- Search Input -->
-                                <input type="text" 
+                            <input type="text" 
                                     placeholder="Search orders..." 
                                     class="border rounded-md" 
                                     x-model="$store.state.searchTerm" 
                                     @input="$store.state.searchOrders()" style="float: right;padding: 5px 15px;"/>
-
-                            </div>
-
-                
-                            <div class="overflow-auto">
-                                <table class="w-full text-left mt-4">
-                                    <thead>
-                                        <tr class="[&>th]:p-2 [&>th]:border [&>th]:whitespace-nowrap [&>th]:font-semibold">
-                                            <template x-if="$store.state.bulkSelect">
-                                            <th>Select</th>
-                                            </template>
-                                            <th>Order</th>
-                                            <th>Name</th>
-                                            <th>Date</th>
-                                            <th>Total</th>
-                                            <th>Consignment Id</th>
-                                            <th>Status</th>
-                                            <th>Amount</th>
-                                            <th>Send to SteadFast</th>
-                                            <th>Print</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template x-for="(order, index) in $store.state.orders" :key="order.id">
-                                            <tr class="[&>td]:p-2 [&>td]:border [&>td]:whitespace-nowrap">
-                                                <template x-if="$store.state.bulkSelect">
-                                                    <td>
-                                                        <input type="checkbox" @click="addToBulk(order)">
-                                                    </td>
-                                                </template>
-                                                <td>
-                                                    <a :href="'https://admin.shopify.com/store/{{ strstr(auth()->user()->name, '.', true) }}/orders/' +
-                                                    order.orderId"
-                                                        class="hover:underline" target="_blank">
-                                                        <span x-text="'#'+order.orderNumber"></span>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <span x-text="order.name"></span>
-                                                </td>
-                                                <td>
-                                                    <span x-text="order.created_at"></span>
-                                                </td>
-                                                <td>
-                                                    <span x-text="order.total"></span>
-                                                </td>
-                                                <td>
-                                                    <span x-text="order.steadFastId ? order.steadFastId : 'Not set'"></span>
-                                                </td>
-                                                <td>
-                                                    <span x-text="order.steadFastStatus ? order.steadFastStatus : 'Not set'"
-                                                        class="border rounded-md px-4 py-1 text-center m-0"></span>
-                                                    <button
-                                                        class="bg-green-700 hover:bg-green-800 px-4 py-1 rounded-md text-white"
-                                                        @click="checkStatus(order, index)">Check</button>
-                                                </td>
-                                                <td>
-                                                    <input type="number" x-model="order.steadFastAmount"
-                                                        class="px-4 py-1 w-24 rounded-md border focus:ring-0 focus:ring-offset-0 border-[#e5e7eb] focus:border-[#e5e7eb]"
-                                                        min="1" :readonly="order.steadFastSend !== 0" />
-                                                </td>
-                                                <td class="text-center">
-                                                    <button class="px-4 py-1 rounded-md bg-gray-300 text-black"
-                                                        :class="!order.steadFastSend &&
-                                                            '!bg-green-700 hover:!bg-green-800 !text-white'"
-                                                        @click="sendToSteadFast(order, index)"
-                                                        x-text="!order.steadFastSend ? 'Send' : 'Sent'"
-                                                        :disabled="order.steadFastSend == 1"
-                                                        :title="order.steadFastSend == 1 ? 'Already Sent.' : 'Click to send.'">
-                                                    </button>
-                                                </td>
-                                                <td>
-                                                    <a :href="order.steadFastId && '{{ route('printOrder', auth()->user()->id) }}'+'/?orderId='+order.orderId" target="_blank" class="bg-gray-300 text-black px-4 py-1 rounded-md"
-                                                    :class="order.steadFastId && '!bg-green-700 hover:!bg-green-800 text-white'"
-                                                    :title="order.steadFastId ? 'Click to print.' : 'Send to SteadFat first to print.'"
-                                                    >Print</a>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
-                    </template>
+                        <div class="overflow-auto">
+                            <table class="w-full text-left mt-4">
+                                <thead>
+                                    <tr class="[&>th]:p-2 [&>th]:border [&>th]:whitespace-nowrap [&>th]:font-semibold">
+                                        <template x-if="$store.state.bulkSelect">
+                                        <th>Select</th>
+                                        </template>
+                                        <th>Order</th>
+                                        <th>Name</th>
+                                        <th>Date</th>
+                                        <th>Total</th>
+                                        <th>Consignment Id</th>
+                                        <th>Status</th>
+                                        <th>Amount</th>
+                                        <th>Send to SteadFast</th>
+                                        <th>Print</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(order, index) in $store.state.orders" :key="order.id">
+                                        <tr class="[&>td]:p-2 [&>td]:border [&>td]:whitespace-nowrap">
+                                            <template x-if="$store.state.bulkSelect">
+                                                <td>
+                                                    <input type="checkbox" @click="addToBulk(order)">
+                                                </td>
+                                            </template>
+                                            <td>
+                                                <a :href="'https://admin.shopify.com/store/{{ strstr(auth()->user()->name, '.', true) }}/orders/' +
+                                                order.orderId"
+                                                    class="hover:underline" target="_blank">
+                                                    <span x-text="'#'+order.orderNumber"></span>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span x-text="order.name"></span>
+                                            </td>
+                                            <td>
+                                                <span x-text="order.created_at"></span>
+                                            </td>
+                                            <td>
+                                                <span x-text="order.total"></span>
+                                            </td>
+                                            <td>
+                                                <span x-text="order.steadFastId ? order.steadFastId : 'Not set'"></span>
+                                            </td>
+                                            <td>
+                                                <span x-text="order.steadFastStatus ? order.steadFastStatus : 'Not set'"
+                                                    class="border rounded-md px-4 py-1 text-center m-0"></span>
+                                                <button
+                                                    class="bg-green-700 hover:bg-green-800 px-4 py-1 rounded-md text-white"
+                                                    @click="checkStatus(order, index)">Check</button>
+                                            </td>
+                                            <td>
+                                                <input type="number" x-model="order.steadFastAmount"
+                                                    class="px-4 py-1 w-24 rounded-md border focus:ring-0 focus:ring-offset-0 border-[#e5e7eb] focus:border-[#e5e7eb]"
+                                                    min="1" :readonly="order.steadFastSend !== 0" />
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="px-4 py-1 rounded-md bg-gray-300 text-black"
+                                                    :class="!order.steadFastSend &&
+                                                        '!bg-green-700 hover:!bg-green-800 !text-white'"
+                                                    @click="sendToSteadFast(order, index)"
+                                                    x-text="!order.steadFastSend ? 'Send' : 'Sent'"
+                                                    :disabled="order.steadFastSend == 1"
+                                                    :title="order.steadFastSend == 1 ? 'Already Sent.' : 'Click to send.'">
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <a :href="order.steadFastId && '{{ route('printOrder', auth()->user()->id) }}'+'/?orderId='+order.orderId" target="_blank" class="bg-gray-300 text-black px-4 py-1 rounded-md"
+                                                :class="order.steadFastId && '!bg-green-700 hover:!bg-green-800 text-white'"
+                                                :title="order.steadFastId ? 'Click to print.' : 'Send to SteadFat first to print.'"
+                                                >Print</a>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <template x-if="!$store.state.orders.length">
                         <p>You don't have any order's yet.</p>
                     </template>
@@ -269,7 +261,6 @@
                     businessTerms: "{{ str_replace('<br/>', '\n', auth()->user()->businessTerms) }}",
                 },
                 orders: {!! json_encode($orders->items()) !!},
-                searchTerm: '', 
                 setOrders(orders) {
                     this.orders = orders;
                 },
@@ -280,6 +271,7 @@
                 msg: false,
                 bulkSelect: false,
                 bulkOrders:[],
+                searchTerm: '',
                 searchOrders: async function() {
                     const searchTerm = this.searchTerm;
                     try {
@@ -290,7 +282,6 @@
                                 search: searchTerm,
                             }
                         });
-                        
                         if (result.data.success) {
                             this.setOrders(result.data.orders);
                             this.setLinks(result.data.links);
