@@ -19,9 +19,8 @@
             <template x-if="$store.state.activeTab=='dashboard'">
                 <div>
                     <h1 class="text-xl font-medium">SteadFast Courier Dashboard</h1>
-                    <p class="my-4 font-medium text-lg">Check Balance</p>
                     <div class="inline-flex flex-col gap-4 sm:flex-row sm:items-center">
-                        <button onclick="getBalance()"
+                        {{-- <button onclick="getBalance()"
                             class="bg-green-700 hover:bg-green-800 rounded-lg px-4 py-1 font-medium text-white max-w-[100px]">Balance</button>
                         <template x-if="$store.state.settings.apiKey && $store.state.settings.secretKey">
                             <div>
@@ -34,9 +33,24 @@
                             </div>
 
                         </template>
+                        --}}
+                        <template x-if="$store.state.showBalance !== true">
+                            <button onclick="getBalance(true)" class="bg-green-700 hover:bg-green-800 rounded-lg px-4 py-1 font-medium text-white  mt-3 max-w-[150px]" style="font-family: arial;">
+                                    <span>Check Balance</span>
+                            </button>
+                        </template>
+                        <template x-if="$store.state.showBalance==true">
+                            <button  @click.outside="$store.state.showBalance = false" class="bg-green-700 hover:bg-green-800 rounded-lg px-4 py-1 font-medium text-white  mt-3 max-w-[150px]" style="font-family: arial;">
+                                    <span x-show="$store.state.showBalance" @click.outside="$store.state.showBalance = false">৳ <strong x-text="$store.state.balance"></strong></span>
+                            </button>
+                        </template>
+
+
+
                         <template x-if="!$store.state.settings.apiKey || !$store.state.settings.secretKey">
                             <p>Please provide api keys in the settings tab to check balance.</p>
                         </template>
+
                     </div>
                     <!--<div class="mt-4">-->
                     <!--    <p class="font-medium">Facing an issue, Please let me know.</p>-->
@@ -133,10 +147,10 @@
                                 @click="bulkSend()">Send Bulk</button>
                             </template>
 
-                            <input type="text" 
-                                    placeholder="Search orders..." 
-                                    class="border rounded-md" 
-                                    x-model="$store.state.searchTerm" 
+                            <input type="text"
+                                    placeholder="Search orders..."
+                                    class="border rounded-md"
+                                    x-model="$store.state.searchTerm"
                                     @input="$store.state.searchOrders()" style="float: right;padding: 5px 15px;"/>
                         </div>
                         <div class="overflow-auto">
@@ -249,6 +263,7 @@
             Alpine.store('state', {
                 activeTab: 'dashboard',
                 balance: '',
+                showBalance: false,
                 settings: {
                     appStatus: {{ auth()->user()->appStatus === 1 ? 'true' : 'false' }},
                     apiKey: "{{ auth()->user()->apiKey }}",
@@ -276,7 +291,7 @@
                     const searchTerm = this.searchTerm;
                     try {
                         const result = await axios({
-                            url: "{{ route('home') }}", 
+                            url: "{{ route('home') }}",
                             method: 'GET',
                             params: {
                                 search: searchTerm,
@@ -291,7 +306,7 @@
                     }
                 }
             });
-            getBalance(false);
+            // getBalance(false);
         });
 
         async function showMsg(status, msg) {
@@ -304,13 +319,54 @@
             }, 3000);
         }
 
-        async function getBalance(show = true) {
+        // async function getBalance(show = true) {
 
+        //     const apiKey = Alpine.store('state').settings.apiKey;
+        //     const secretKey = Alpine.store('state').settings.secretKey;
+
+        //     if (show && (!apiKey || !secretKey)) {
+        //         return showMsg('error', 'Please provevide api credentials.');
+        //     }
+
+        //     if (show && !Alpine.store('state').settings.appStatus) {
+        //         return showMsg('error', 'App is disabled. Enable the app to continue.');
+        //     }
+
+        //     try {
+        //         if(show){
+        //             showMsg('success', 'Checking...');
+        //         }
+        //         const balance = await axios({
+        //             url: 'https://portal.packzy.com/api/v1/get_balance',
+        //             headers: {
+        //                 'Api-Key': apiKey,
+        //                 'Secret-Key': secretKey
+        //             }
+        //         });
+        //         if (balance.data.status == 200) {
+        //             Alpine.store('state').balance = balance.data.current_balance;
+        //             if (show) {
+        //                 showMsg('success', 'Balance status updated.');
+        //             }
+        //         } else {
+        //             if (show) {
+        //                 showMsg('error', balance.data.message || 'Something went wrong');
+        //             }
+        //         }
+        //     } catch (error) {
+        //         showMsg('error', (error.response.data || 'Something went wrong'));
+        //     }
+
+        // };
+
+
+
+        async function getBalance(show = true) {
             const apiKey = Alpine.store('state').settings.apiKey;
             const secretKey = Alpine.store('state').settings.secretKey;
 
             if (show && (!apiKey || !secretKey)) {
-                return showMsg('error', 'Please provevide api credentials.');
+                return showMsg('error', 'Please provide API credentials.');
             }
 
             if (show && !Alpine.store('state').settings.appStatus) {
@@ -318,7 +374,7 @@
             }
 
             try {
-                if(show){
+                if (show) {
                     showMsg('success', 'Checking...');
                 }
                 const balance = await axios({
@@ -328,21 +384,33 @@
                         'Secret-Key': secretKey
                     }
                 });
-                if (balance.data.status == 200) {
+                if (balance.data.status === 200) {
                     Alpine.store('state').balance = balance.data.current_balance;
+                    Alpine.store('state').showBalance = true;
+
                     if (show) {
                         showMsg('success', 'Balance status updated.');
                     }
+
+                    // Hide balance after 2 seconds
+                    setTimeout(() => {
+                        Alpine.store('state').showBalance = false;
+                    }, 30000);
                 } else {
                     if (show) {
                         showMsg('error', balance.data.message || 'Something went wrong');
                     }
                 }
             } catch (error) {
-                showMsg('error', (error.response.data || 'Something went wrong'));
+                showMsg('error', (error.response?.data || 'Something went wrong'));
             }
+        }
 
-        };
+
+
+
+
+
 
         async function saveSettings() {
 
@@ -390,7 +458,7 @@
 
         async function sendToSteadFast(order, index) {
 
-            const amount = Number(order.steadFastAmount) ? Number(order.steadFastAmount) : 200;
+            const amount = Number(order.steadFastAmount) ? Number(order.steadFastAmount) : order.total;
             const apiKey = Alpine.store('state').settings.apiKey;
             const secretKey = Alpine.store('state').settings.secretKey;
 
@@ -507,7 +575,7 @@
 
                             bulkData.forEach(item => {
                                 let matchIndex = Alpine.store('state').orders.findIndex(order => order.orderId === item.invoice);
-                                
+
                                 if (matchIndex !== -1) {
                                      Alpine.store('state').orders[matchIndex].steadFastAmount = item.cod_amount;
                                      Alpine.store('state').orders[matchIndex].steadFastSend = true;
@@ -619,7 +687,7 @@
                     Alpine.store('state').setLinks(result.data.links ?? "")
                 }
         }
-        
+
         function bulkSelect(){
             Alpine.store('state').bulkSelect = !Alpine.store('state').bulkSelect;
             if(!Alpine.store('state').bulkSelect){
